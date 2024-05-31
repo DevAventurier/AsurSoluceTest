@@ -1,0 +1,21 @@
+<div class="modal-body">
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="text-center mb-4">
+      <h3 class="mb-2"> {{ title }} </h3>
+    </div>
+    <form id="editUserForm" class="row g-3" onsubmit="return false">
+      {% csrf_token %}
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="modalEditUserFirstName">First Name</label>
+        <input type="text" id="modalEditUserFirstName" name="modalEditUserFirstName" class="form-control" placeholder="John" />
+      </div>
+      <div class="col-12 col-md-6">
+          <label class="form-label" for="modalEditUserFirstName">First Name</label>
+          <input type="text" id="modalEditUserFirstName" name="modalEditUserFirstName" class="form-control" placeholder="John" />
+        </div>
+      <div class="col-12 text-center">
+        <button type="submit" class="btn btn-primary me-sm-3 me-1">Soumettre</button>
+        <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Annuler</button>
+      </div>
+    </form>
+</div>

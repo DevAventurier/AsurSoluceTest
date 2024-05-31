@@ -1,0 +1,239 @@
+
+<script>
+    const BASE_URL = "/web_front_end/";
+    const model_name = "user";
+
+    const EMPLOYE_BASE_URL = BASE_URL+model_name+"/"
+    const index_url = EMPLOYE_BASE_URL+"list/";
+    const create_url = EMPLOYE_BASE_URL+"create/";
+    const update_url = EMPLOYE_BASE_URL+"update/";
+    const delete_url = EMPLOYE_BASE_URL+"delete/";
+
+    const modal_form_id = `create_or_update_modal`;
+    const modal_content = `#${modal_form_id} div .modal-content`;
+    {% comment %} const modal_form_object = new bootstrap.Modal($(`#${modal_form_id}`));
+    const modal_export_data = new bootstrap.Modal($('#modal_export_data')); {% endcomment %}
+    
+    let datatable = function () {
+        // Variables partagées
+        let table;
+        let dt;
+
+        // Fonctions privées
+        let initDatatable = function () {
+            dt = $("#model_data").DataTable();
+            /*$.ajax({
+                url: `${index_url}`,
+                type: 'get',
+                dataType: 'json',
+                success: function (data) {
+                    console.log(data['users']);
+                    let users = data['users'];
+
+                    users.forEach(function (user) {
+                        console.log(user);
+                        let new_row = dt.row.add([
+                            user.username,
+                            user.email,
+                            '',
+                            generateActionMenu(user.id),
+                        ]).draw().node();
+                    });
+                },
+            })*/
+            console.log("Hello")
+        }
+
+        let refreshDataTable = function() {
+            dt.clear().draw();
+            initDatatable();
+        }
+
+        // Suppression de ligne
+        var handleSearchDatatable = function () {
+            $('#input_table_filter').on('keyup', function (e) {
+                dt.search(e.target.value).draw();
+            });
+        }
+
+        // Méthodes publiques
+        return {
+            init: function () {
+                initDatatable();
+                handleSearchDatatable();
+            },
+            refresh: function () {
+                refreshDataTable();
+            }
+        }
+    }();
+
+    datatable.init();
+
+    function generateActionMenu(id) {
+        return `<div class="d-flex">
+                    <div class="menu-item px-3">
+                        <a href="#" onclick="edit_object(${id})" class="btn btn-sm btn-success px-3">
+                        <span><i class="far fa-edit"></i></span>
+                        </a>
+                    </div>
+                    <div class="menu-item px-3">
+                        <a href="#" onclick="show_dialog_delete_object(${id}, '')" class="btn btn-sm btn-danger px-3">
+                        <span><i class="far fa-trash-alt fa-lg"></i></span>
+                        </a>
+                    </div>
+                </div>`;
+    }
+
+
+    $(`#create_modal`).on('click', function () {
+        $.ajax({
+            url: `${create_url}`,
+            type: 'get',
+            dataType: 'json',
+            beforeSend: function () {
+                modal_form_object.show();
+            },
+            success: function (data) {
+                $(modal_content).html(data.html_form);
+                store_or_update_object(create_url);
+            }
+        });
+    });
+
+    function upload_object(){
+        $(`#form_upload`).on('submit', function () {
+            stopEvent();
+            let form = $(this);
+            let formData = new FormData(form[0]); 
+            console.log("submit");
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr("method"),
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    console.log("Hello");
+                    if ("message" in data) {
+                        datatable.refresh();
+                        let icon = "success";
+                        let title = "Succès";
+                        let message = data["message"];
+                        modal_export_data.hide();
+                        showDialog(icon, title, message);
+                    } else if ("error" in data){
+                        let icon = "error";
+                        let title = "Error";
+                        let message = data["error"];
+                        showDialog(icon, title, message);
+                    }
+                    stopEvent();
+                }
+            });
+        });
+    }
+
+    upload_object();
+
+    function edit_object(id){
+        let tmp_update_url = `${update_url}${id}/`;
+        $.ajax({
+            url: `${tmp_update_url}`,
+            type: 'get',
+            dataType: 'json',
+            beforeSend: function () {
+                modal_form_object.show();
+            },
+            success: function (data) {
+                $(modal_content).html(data.html_form);
+                store_or_update_object(tmp_update_url);
+            }
+        });
+    }
+
+    function store_or_update_object(url){
+        console.log($(`#form`));
+        $(`#form`).on('submit', function () {
+            stopEvent();
+            let form = $(this);
+            $.ajax({
+                url: url,
+                type: form.attr("method"),
+                data: form.serialize(),
+                dataType: 'json',
+                success: function (data) {
+                    if (data.form_is_valid){
+                        if ("message" in data) {
+                            datatable.refresh();
+                            let icon = "success";
+                            let title = "Succès";
+                            let message = data["message"];
+                            modal_form_object.hide();
+                            showDialog(icon, title, message);
+                        }
+                    } else {
+                        $(modal_content).html(data.html_form);
+                        store_or_update_object(create_url);
+                    }
+                    stopEvent();
+                }
+            });
+        });
+    }
+
+    function show_dialog_delete_object(id, object_message){
+        let title = "Êtes vous sur !";
+        let message = "Vous voulez supprimer " + object_message;
+
+        Swal.fire({
+            icon: "warning",
+            title: title,
+            text: message,
+            showConfirmButton: true,
+            showCancelButton: true,
+            focusConfirm: false,
+            confirmButtonColor: "#F8285A",
+        }).then((response) => {
+            if (response.isConfirmed) {
+                delete_object(id);
+            }
+        }).catch((error) => {
+            console.log(error);
+        });
+    }
+
+    function delete_object(id){
+        $.ajax({
+            url: `${delete_url}${id}/`,
+            type: 'get',
+            dataType: 'json',
+            success: function (data) {
+                if ("message" in data) {
+                    datatable.refresh();
+                    let icon = "success";
+                    let title = "Succès";
+                    let message = data["message"];
+                    showDialog(icon, title, message);
+                    stopEvent();
+                }
+            }
+        });
+    }
+
+    function showDialog(icon, title, message){
+        Swal.fire({
+            icon: icon,
+            title: title.toUpperCase(),
+            text: message,
+            confirmButtonColor: "#5179d6",
+        });
+    }
+
+    function stopEvent(){
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+</script>
